@@ -99,29 +99,30 @@ for it = 1:nit
     % Send the data over the channel
     [y, w] = ch{it}.step(x);
     
-    % Save common data
-    T = table;
-
-    T.x = x;
-    T.y = y;
-    T.w = w;
-    for idsgn = 1:ndsgn
-        writetable(T, sprintf('../../datasets/rx_%d/idata_%d.csv', ...
-            designID(idsgn), it));
-    end
-    
     % Receive data
     parfor isim = 1:nsim
         snrOut(:,isim,it) = rx{isim,it}.step(x, y, w);
         
-        % Save data
+        % Save output data
         T = table;
-        T.yant = rx{isim,it}.yant;
         T.yrffe = rx{isim,it}.yrffe;
         T.xhat = rx{isim,it}.xhat;
         
         writetable(T, sprintf('../../datasets/rx_%d/odata_%d_%d.csv', ...
             rx{isim,it}.designID, isim, it));
+    end    
+    
+    % Save common data
+    T = table;
+    T.x = x;
+    T.y = y;
+    T.w = w;
+    tmp = rx{1,it}.step(x, y, w);
+    T.yant = rx{1,it}.yant;
+    
+    for idsgn = 1:ndsgn
+        writetable(T, sprintf('../../datasets/rx_%d/idata_%d.csv', ...
+            designID(idsgn), it));
     end
     toc;
 end
