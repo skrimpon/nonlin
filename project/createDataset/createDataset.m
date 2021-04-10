@@ -46,7 +46,7 @@ Pin = 10*log10(EkT*fs) + 30 + snrInTest;
 designID = [1;1;1;1;2;2;2;2];
 ndsgn = length(unique(designID));
 for idsgn = 1:ndsgn
-    fname = sprintf('rx_%d',idsgn);
+    fname = sprintf('../../datasets/rx_%d',idsgn);
 %    rmdir(fname);   % delete previous data folder
     mkdir(fname);   % create a new folder
 end
@@ -105,8 +105,9 @@ for it = 1:nit
     T.x = x;
     T.y = y;
     T.w = w;
-    for isim = 1:nsim
-        writetable(T, sprintf('rx_%d/idata_%d.csv', rx{isim,it}.designID, it));
+    for idsgn = 1:ndsgn
+        writetable(T, sprintf('../../datasets/rx_%d/idata_%d.csv', ...
+            designID(idsgn), it));
     end
     
     % Receive data
@@ -119,19 +120,8 @@ for it = 1:nit
         T.yrffe = rx{isim,it}.yrffe;
         T.xhat = rx{isim,it}.xhat;
         
-        fname = sprintf('rx_%d/odata',rx{isim,it}.designID);
-        if rx{isim,it}.isLinear == true
-            fname = sprintf('%s_lin',fname);
-        else
-            fname = sprintf('%s_nonlin',fname);
-        end
-        
-        if rx{isim,it}.nbits == 0
-            fname = sprintf('%s_noadc',fname);
-        else
-            fname = sprintf('%s_adc',fname);
-        end
-        writetable(T, sprintf('%s_%d_%d.csv', fname, rx{isim,it}.designID, it));
+        writetable(T, sprintf('../../datasets/rx_%d/odata_%d_%d.csv', ...
+            rx{isim,it}.designID, isim, it));
     end
     toc;
 end
@@ -191,37 +181,15 @@ for isim = 1:nsim
     T.rffePower = rffePower(isim);
     T.snrSat = snrSat(isim);
     
-    fname = sprintf('rx_%d/param_0',rx{isim,it}.designID);
-    if rx{isim,it}.isLinear == true
-        fname = sprintf('%s_lin',fname);
-    else
-        fname = sprintf('%s_nonlin',fname);
-    end
-
-    if rx{isim,it}.nbits == 0
-        fname = sprintf('%s_noadc',fname);
-    else
-        fname = sprintf('%s_adc',fname);
-    end
-    writetable(T, sprintf('%s_%d.csv', fname, rx{isim,it}.designID));
+    writetable(T, sprintf('../../datasets/rx_%d/param_0_%d_%d.csv', ...
+        rx{isim,it}.designID, isim, it));
     
     T = table;
     T.snrOut = snrOut(:,isim);
     T.rffeModel = rffeModel(:,isim);
     T.Pin = Pin;
     
-    fname = sprintf('rx_%d/param_1',rx{isim,it}.designID);
-    if rx{isim,it}.isLinear == true
-        fname = sprintf('%s_lin',fname);
-    else
-        fname = sprintf('%s_nonlin',fname);
-    end
-
-    if rx{isim,it}.nbits == 0
-        fname = sprintf('%s_noadc',fname);
-    else
-        fname = sprintf('%s_adc',fname);
-    end
-    writetable(T, sprintf('%s_%d.csv', fname, rx{isim,it}.designID));
+    writetable(T, sprintf('../../datasets/rx_%d/param_1_%d_%d.csv', ...
+        rx{isim,it}.designID, isim, it));
 end
 toc;
