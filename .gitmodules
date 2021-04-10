@@ -1,0 +1,3 @@
+[submodule "mmwComm"]
+	path = mmwComm
+	url = https://github.com/nyu-wireless/mmwComm
