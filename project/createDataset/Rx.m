@@ -100,6 +100,9 @@ classdef Rx < matlab.System
                 % Run through RFFE stages
                 obj.yrffe(:,:,isnr) = obj.rffe.step(obj.yant(:,:,isnr));
                 
+                % Add thermal noise
+                obj.yant(:,:,isnr) = obj.rffe.elem{1}.step(obj.yant(:,:,isnr));
+                
                 % Use the known channel w to beamform
                 obj.xhat(:,isnr) = sum(obj.yrffe(:,:,isnr).*conj(w),2) ./ sum(abs(w).^2,2);
                 

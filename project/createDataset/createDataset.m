@@ -5,14 +5,14 @@
 
 %% Packages
 % Add the folder containing +mmwsim to the MATLAB path.
-addpath('../../mmwComm/');
+addpath('../mmwComm/');
 
 %% Parameters
 fc = 140e+09;       % carrier frequency in Hz
 fs = 1.96608e+09;   % sample frequency in Hz
 nx = 1e4;           % num of samples
 nrx = 16;           % num of RX antennas
-nit = 5;            % num of iterations
+nit = 1;            % num of iterations
 nsnr = 31;          % num of SNR points
 xvar = 1;           % variance of the TX symbols
 ndrivers = length(0:log2(nrx)); % num of LO driver configurations
@@ -73,6 +73,7 @@ for it = 1:nit
     for isim = 1:nsim
         rx{isim,it} = Rx(...
             'nrx', nrx, ...
+            'nx', nx, ...
             'lnaNF', lnaNF(lnaTest(isim)), ...
             'lnaGain', lnaGain(lnaTest(isim)), ...
             'lnaPower', lnaPower(lnaTest(isim)), ...
