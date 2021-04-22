@@ -13,7 +13,7 @@ fs = 1.96608e+09;   % sample frequency in Hz
 nx = 1e4;           % num of samples
 nrx = 16;           % num of RX antennas
 nit = 1;            % num of iterations
-nsnr = 31;          % num of SNR points
+nsnr = 11;          % num of SNR points
 xvar = 1;           % variance of the TX symbols
 ndrivers = length(0:log2(nrx)); % num of LO driver configurations
 
@@ -47,7 +47,7 @@ designID = [1;1;1;1;2;2;2;2];
 ndsgn = length(unique(designID));
 for idsgn = 1:ndsgn
     fname = sprintf('../../datasets/rx_%d',idsgn);
-%    rmdir(fname);   % delete previous data folder
+    
     mkdir(fname);   % create a new folder
 end
 adcTest = [4;0;4;0;5;0;5;0];
