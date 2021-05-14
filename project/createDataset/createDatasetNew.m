@@ -13,7 +13,7 @@ nrx = 16;
 nbits = 5;
 dither = false;
 chanType = 'iidPhase';
-txSymType = 'QAM';
+txSymType = 'iidGaussian';
 % Load the RFFE models
 load('rffe140GHz.mat');
 %%
@@ -100,7 +100,7 @@ tx = Tx('nx', nx, 'txSymType', txSymType);
 % Create the channel object
 ch = Chan('nx', nx, 'nrx', nrx, 'chanType', chanType, 'noiseTemp', T);
 
-for it2 = 1:1
+for it2 = 1:10
     tic;
     x = tx.step();
     [y, w] = ch.step(x);
@@ -145,15 +145,15 @@ for it2 = 1:1
         yOut(:,:,it) = r;
     end
 
-%     T = table;
-%     T.x = x;
-%     T.y = y;
-%     T.w = w;
-%     T.yant = yIn;
-%     T.yrffe = yOut;
-%     T.pwrIn = pwrIn;
-%     T.pwrOut = pwrOut;
-%     writetable(T, sprintf('../../datasets/new/dataset_%d.csv', it2));
+    T = table;
+    T.x = x;
+    T.y = y;
+    T.w = w;
+    T.yant = yIn;
+    T.yrffe = yOut;
+    T.pwrIn = pwrIn;
+    T.pwrOut = pwrOut;
+    writetable(T, sprintf('../../datasets/new/dataset_%d.csv', it2));
     toc;
 end
 

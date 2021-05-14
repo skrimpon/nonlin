@@ -93,6 +93,7 @@ classdef Rx < matlab.System
             obj.yant = zeros(obj.nx, obj.nrx, nsnr);
             obj.yrffe = zeros(obj.nx, obj.nrx, nsnr);
             obj.xhat = zeros(obj.nx, nsnr);
+            y = y - mean(y);
             for isnr = 1:nsnr
                 % Get the SNR and scale the input signal
                 obj.yant(:,:,isnr) = 10^(0.05*obj.snrInTest(isnr))*y;

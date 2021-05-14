@@ -27,8 +27,9 @@ classdef Tx < matlab.System
             elseif strcmp(obj.txSymType, 'iidPhase')
                 x = exp(1j*2*pi*rand(obj.nx,1));
             elseif strcmp(obj.txSymType, 'QAM')
-                bit = randi([0, 1], 4, obj.nx);
+                bit = randi([0, 1], log2(4), obj.nx);
                 x = qammod(bit, 4, 'InputType', 'bit', 'UnitAveragePower', true);
+                x = x';
             else
                 error('Unknown TX symbol type');
             end
