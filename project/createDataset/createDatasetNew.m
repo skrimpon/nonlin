@@ -8,12 +8,12 @@ addpath('../mmwComm/');
 ilna = 3;
 imix = 5;
 iplo = 7;
-nx = 16384;
+nx = 1e4;
 nrx = 16;
-nbits = 5;
+nbits = 4;
 dither = false;
 chanType = 'iidPhase';
-txSymType = 'iidGaussian';
+txSymType = 'QAM';
 % Load the RFFE models
 load('rffe140GHz.mat');
 %%
@@ -100,13 +100,13 @@ tx = Tx('nx', nx, 'txSymType', txSymType);
 % Create the channel object
 ch = Chan('nx', nx, 'nrx', nrx, 'chanType', chanType, 'noiseTemp', T);
 
-for it2 = 1:10
+for it2 = 1:5
     tic;
     x = tx.step();
     [y, w] = ch.step(x);
     y = y./sqrt(mean(abs(y).^2, 'all'));
 
-    testInputLevelOffsets = -10:2:80'; % dB
+    testInputLevelOffsets = [-10:10:50,52:2:80]; % dB
     testInputLevels = noiseFloor+testInputLevelOffsets+30; % dBm
     A = 10.^((testInputLevels-30)/20);      % Voltage gain (attenuation)
     % A = A*sqrt(nrx);                        % Account for generator scaling

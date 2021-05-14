@@ -13,9 +13,9 @@ print(f'Tensorflow Version: {tf.__version__}')
 physical_devices = tf.config.list_physical_devices('GPU')
 tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
-nit = 10  # num of iterations
+nit = 5  # num of iterations
 nrx = 16  # num of receiver antennas
-nsnr = 29  # num of snr points
+nsnr = 22  # num of snr points
 nx = 10000  # num of tx samples
 
 
@@ -172,10 +172,11 @@ def my_norm(A):
 
 def test(model, y_rffe, pwr_out, x, w, it, isnr_tst):
     pin = np.array((
-        -130.4307, -125.4307, -120.4307, -115.4307, -110.4307, -105.4307, -100.4307, -95.4307,
-        -90.4307, -85.4307, -80.4307, -75.4307, -70.4307, -65.4307, -60.4307, -55.4307,
-        -50.4307, -45.4307, -40.4307, -35.4307, -30.4307, -25.4307, -20.4307, -15.4307,
-        -10.4307, -5.4307, -0.4307, 4.5693, 9.5693))
+        -91.5771, -81.5771, -71.5771, -61.5771, -51.5771,
+        -41.5771, -31.5771, -29.5771, -27.5771, -25.5771,
+        -23.5771, -21.5771, -19.5771, -17.5771, -15.5771,
+        -13.5771, -11.5771, -9.5771, -7.5771, -5.5771,
+        -3.5771, -1.5771))
 
     pred_snr = np.zeros(nsnr)
     base_snr = np.zeros(nsnr)
@@ -209,9 +210,11 @@ def test(model, y_rffe, pwr_out, x, w, it, isnr_tst):
 
 
 model = make_model()
+# Train differe datasets over the same model
 for it in range(2):
     [x, w, y_ant, y_rffe, pwr_out] = parse_file(it)
     test(model, y_rffe, pwr_out, x, w, it, -1)
+    # Train the same dataset over the same model multiple times.
     for it2 in range(2):
         for isnr in range(nsnr - 1, 0, -1):
             print(f'{it}\t{it2}\t{isnr}')
