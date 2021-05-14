@@ -1,18 +1,26 @@
+
+clc;
+%% Packages
+% Add the folder containing +mmwsim to the MATLAB path.
+addpath('../mmwComm/');
+
+%%
 ilna = 3;
 imix = 5;
 iplo = 7;
-nx = 1e4;
+nx = 16384;
 nrx = 16;
-nbits = 4;
+nbits = 5;
 dither = false;
 chanType = 'iidPhase';
-txSymType = 'iidGaussian';
+txSymType = 'QAM';
 % Load the RFFE models
 load('rffe140GHz.mat');
 %%
 % fs = 1.96608e+09;   % sample frequency in Hz
+fs = 491.52e6/4;
 % fs = 100e6;
-fs = nx;   % sample frequency in Hz
+% fs = nx;   % sample frequency in Hz
 NF = 10*log10(10^(0.1*lnaNF(ilna)) + 10^(-0.1*lnaGain(ilna))*(10^(0.1*mixNF(iplo,imix))-1));
 T = 290;        % Ambient temperature (K)
 BW = fs;        % Bandwidth (Hz)
@@ -72,7 +80,7 @@ adcFS = max(adc.stepSize*(2^(nbits-1)-1), 1);
 EsFS = 2*adcFS^2;
 
 % Test the values at some backoff from full scale
-bkfTest = linspace(-30,20,200)';
+bkfTest = linspace(-30,5,100)';
 EsTest = EsFS*10.^(0.1*bkfTest);
 
 % Compute the SNR
@@ -82,7 +90,6 @@ snr = bbAGC.compSnrEs(EsTest, adc);
 [~, im] = max(snr);
 bbAGC.set('EsTgt', EsTest(im));
 %%
-clc;
 awgnChannel = comm.AWGNChannel(...
     'NoiseMethod', 'Variance', ...
     'Variance', 10^(0.1*noiseFloor));
@@ -93,21 +100,21 @@ tx = Tx('nx', nx, 'txSymType', txSymType);
 % Create the channel object
 ch = Chan('nx', nx, 'nrx', nrx, 'chanType', chanType, 'noiseTemp', T);
 
-for it2 = 1:10
+for it2 = 1:1
     tic;
     x = tx.step();
     [y, w] = ch.step(x);
     y = y./sqrt(mean(abs(y).^2, 'all'));
 
-    testInputLevelOffsets = [-20:5:120]; % dB
+    testInputLevelOffsets = -10:2:80'; % dB
     testInputLevels = noiseFloor+testInputLevelOffsets+30; % dBm
     A = 10.^((testInputLevels-30)/20);      % Voltage gain (attenuation)
-    A = A*sqrt(nrx);                        % Account for generator scaling
+    % A = A*sqrt(nrx);                        % Account for generator scaling
     nit = size(A,2);
     snrOut = zeros(nit,1);
     rxPwr = zeros(nit,1);
     outPwr = zeros(nit,1);
-
+    nsnr = length(testInputLevelOffsets);
     yIn = zeros(nx, nrx, nsnr);
     yOut = zeros(nx, nrx, nsnr);
     pwrIn = zeros(nx, nrx, nsnr);
@@ -122,6 +129,7 @@ for it2 = 1:10
         r2 = awgnChannel(yrx);
         r3 = mixNoise(lnaNoise(tn(yrx)));
         r = mixAmp(mixNoise(lnaAmp(lnaNoise(tn(yrx)))));
+        % r = (mixNoise((lnaNoise(tn(yrx)))));
         % r = r3;
         % fprintf('%.4f %.4f\n', 10*log10(mean(r2.*conj(r2), 'all')), 10*log10(mean(r3.*conj(r3), 'all')))
         measuredPower = mean(mean(r.*conj(r)));
@@ -137,18 +145,18 @@ for it2 = 1:10
         yOut(:,:,it) = r;
     end
 
-    T = table;
-    T.x = x;
-    T.y = y;
-    T.w = w;
-    T.yant = yIn;
-    T.yrffe = yOut;
-    T.pwrIn = pwrIn;
-    T.pwrOut = pwrOut;
-    writetable(T, sprintf('../../datasets/new/dataset_%d.csv', it2));
+%     T = table;
+%     T.x = x;
+%     T.y = y;
+%     T.w = w;
+%     T.yant = yIn;
+%     T.yrffe = yOut;
+%     T.pwrIn = pwrIn;
+%     T.pwrOut = pwrOut;
+%     writetable(T, sprintf('../../datasets/new/dataset_%d.csv', it2));
     toc;
 end
-%%
+
 figure(1);
 clf;
 yyaxis left
