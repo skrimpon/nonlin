@@ -256,7 +256,7 @@ def test(model, x_test, y_test):
     return pred_snr
 
 
-MODEL_BASENAME = 'DENSE_symbol_softsing'
+MODEL_BASENAME = 'DENSE_symbol_softsing_test_on_separate'
 model_snr_recordings_file = './model_checkpoints/' + MODEL_BASENAME + '_snr_recordings.txt'
 
 
@@ -279,7 +279,29 @@ if __name__ == '__main__':
     X_all = np.concatenate([X_all,w_in.real,w_in.imag,my_pwr], axis=2)
     r_all = np.repeat(np.concatenate([x[:,np.newaxis].real,x[:,np.newaxis].imag],axis=1)[:,np.newaxis,:], X_all.shape[1], axis=1)
 
-    x_train, x_test, y_train, y_test = train_test_split(X_all, r_all, shuffle=True, test_size=0.1)
+
+
+
+    it_list_train = [16,17,18,19] #,8,9,10,11,12,13,14,15
+    [x_test_pre, w_test_pre, y_ant_test_pre, y_rffe_test_pre, pwr_out_test_pre] = parse_multiple_files(it_list_train)
+    w_in_test = w_test_pre.transpose()
+    X_all_test = np.concatenate([y_rffe_test_pre.real, y_rffe_test_pre.imag], axis=2)
+    X_min_test = X_all_test.min(axis=2).min(axis=0)
+    X_max_test = X_all_test.max(axis=2).max(axis=0)
+    X_all_test = X_all_test - X_min_test[np.newaxis,:,np.newaxis]
+    X_all_test = X_all_test / (X_max_test[np.newaxis,:,np.newaxis] - X_min_test[np.newaxis,:,np.newaxis])
+    w_in_test = (w_in_test + 1) / 2
+    w_in_test = np.repeat(w_in_test[:,np.newaxis,:], X_all_test.shape[1], axis=1)
+    my_pwr_test = 10 ** (0.1 * (pwr_out_test_pre - 30))
+    X_all_test = np.concatenate([X_all_test,w_in_test.real,w_in_test.imag,my_pwr_test], axis=2)
+    r_all_test = np.repeat(np.concatenate([x_test_pre[:,np.newaxis].real,x_test_pre[:,np.newaxis].imag],axis=1)[:,np.newaxis,:], X_all_test.shape[1], axis=1)
+
+    x_train = X_all
+    y_train = r_all
+    x_test = X_all_test
+    y_test = r_all_test
+
+    # x_train, x_test, y_train, y_test = train_test_split(X_all, r_all, shuffle=True, test_size=0.1)
 
     with open(model_snr_recordings_file, 'w') as f:
         f.write('ModelName,')
@@ -293,7 +315,7 @@ if __name__ == '__main__':
         for isnr in range(nsnr - 1, 0, -1):
                 iteration_string = '{}_{}_{}'.format(it, it2, isnr)
                 print(iteration_string)
-                model.fit(x_train[:, isnr, :], y_train[:, isnr, :], epochs=10, batch_size=64, shuffle=False,
+                model.fit(x_train[:, isnr, :], y_train[:, isnr, :], epochs=10, batch_size=64, shuffle=True,
                           validation_data=(x_test[:, isnr, :], y_test[:, isnr, :]), verbose=2,
                           callbacks=[tensorboard_callback])
                 model_string = './model_checkpoints/' + MODEL_BASENAME + '_' + iteration_string

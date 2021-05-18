@@ -1,4 +1,4 @@
-
+clear;
 clc;
 %% Packages
 % Add the folder containing +mmwsim to the MATLAB path.
@@ -47,8 +47,7 @@ lnaNoise = MultiInput(lnaNoise0, nrx);
 
 lnaAmp0 = comm.MemorylessNonlinearity(...
     'Method', 'Lookup table', ...
-    'Table', lnaAmpLut(:,:,ilna), ...
-    'ReferenceImpedance', ReferenceImpedance);
+    'Table', lnaAmpLut(:,:,ilna));
 lnaAmp = MultiInput(lnaAmp0, nrx);
 
 mixNoise0 = comm.ThermalNoise(...
@@ -59,8 +58,7 @@ mixNoise = MultiInput(mixNoise0, nrx);
 
 mixAmp0 = comm.MemorylessNonlinearity(...
     'Method', 'Lookup table', ...
-    'Table', reshape(mixAmpLut(:,:,iplo,imix), 31, 3), ...
-    'ReferenceImpedance', ReferenceImpedance);
+    'Table', reshape(mixAmpLut(:,:,iplo,imix), 31, 3));
 mixAmp = MultiInput(mixAmp0, nrx);
 
 % Baseband AGC used to adjust the input level to the ADC-
@@ -100,7 +98,7 @@ tx = Tx('nx', nx, 'txSymType', txSymType);
 % Create the channel object
 ch = Chan('nx', nx, 'nrx', nrx, 'chanType', chanType, 'noiseTemp', T);
 
-for it2 = 1:5
+for it2 = 10:20
     tic;
     x = tx.step();
     [y, w] = ch.step(x);
