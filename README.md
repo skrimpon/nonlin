@@ -23,7 +23,7 @@ communication systems. Our results show, deep neural networks are promising tool
 
 
 ## Full Report :books:
-The rest of our full report can be found here (&#x1F34E;) Put a link hereeee!!! (&#x1F34E;)
+The rest of our full report can be found [here](https://github.com/skrimpon/nonlin/tree/main/docs/FinalReport.pdf). 
 
 
 ## Our Dataset is open :arrow_down:
