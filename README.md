@@ -37,7 +37,7 @@ We provide the trained networks and the testing dataset in a colab notebook. We,
 
 If you just want to read our results please see the notebook written as a markdown [here](https://github.com/skrimpon/nonlin/blob/main/demo/FinalResults.md). 
 
-## Our main result
+## Our main result :mortar_board:
 
 >![Results](https://raw.githubusercontent.com/skrimpon/nonlin/main/performance_eval.png)
 >
