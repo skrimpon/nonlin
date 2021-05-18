@@ -1,197 +1,127 @@
-%%
+%% Generate the dataset for 
 %
-% Description:
-
-
+% Authors:  Panagiotis Skrimponis
+%           Mustafa Ozkoc
+%
+% Description: 
+clc;
 %% Packages
 % Add the folder containing +mmwsim to the MATLAB path.
 addpath('../mmwComm/');
 
 %% Parameters
 fc = 140e+09;       % carrier frequency in Hz
-fs = 1.96608e+09;   % sample frequency in Hz
+fs = 491.52e6/4;    % sample frequency in Hz
 nx = 1e4;           % num of samples
 nrx = 16;           % num of RX antennas
-nit = 1;            % num of iterations
-nsnr = 11;          % num of SNR points
+nit = 10;           % num of datasets to generate
 xvar = 1;           % variance of the TX symbols
-ndrivers = length(0:log2(nrx)); % num of LO driver configurations
+isLinear = false;   % 'false' to include the distortion from the rffe
+isSave = true;      % 'true' to save the dataset
+nbits = 4;          % ADC resolution (i.e., 4-bit). For inf-bit use 0.
 
-txSymType = 'iidGaussian';  % Transmit symbol type: 'iidGaussian' or
-                            %                       'iidPhase'
+txSymType = 'QAM';          % Transmit symbol type: 'iidGaussian', 
+                            %                       'iidPhase' or 'QAM'
+                            %                       
 chanType = 'iidPhase';      % Channel type: 'iidGaussian', 'iidPhase',
                             %               'iidAoA' or 'ones'
 
 % Load the RFFE models
 load('rffe140GHz.mat');
 
-% Input SNR Es/N0 relative to thermal noise
-snrInTest = linspace(-10, 50, nsnr)';
+% Select components for the LNA, Mixer, LO and ADC.
+ilna = 3;
+imix = 5;
+iplo = 7;
+irx = 1;
 
-% Compute received input power Pin in dBm
-noiseTemp = 290;						% noise temperature in K
-EkT = physconst('Boltzman')*noiseTemp;	% noise energy
-Pin = 10*log10(EkT*fs) + 30 + snrInTest;
+% Create a receiver based on this configuration.
+rx = Rx(...
+    'nrx', nrx, ...
+    'nx', nx, ...
+    'lnaNF', lnaNF(ilna), ...
+    'lnaGain', lnaGain(ilna), ...
+    'lnaPower', lnaPower(ilna), ...
+    'lnaAmpLut', lnaAmpLut(:,:,ilna), ...
+    'mixNF', mixNF(iplo,imix), ...
+    'mixPLO', mixPLO(iplo), ...
+    'mixGain', mixGain(iplo,imix), ...
+    'mixPower', mixPower(imix), ...
+    'mixAmpLut', reshape(mixAmpLut(:,:,iplo,imix),31,3), ...
+    'fs', fs, ...
+    'isLinear', isLinear, ...
+    'nbits', nbits);
 
-%% Run the simulations
-%
-% 1. Design 1
-% 2. Design 1 w/o A/D
-% 3. Design 1 w/ Linear RFFE
-% 4. Design 1 w/o A/D w/ Linear RFFE
-% 5. Design 2
-% 6. Design 2 w/o A/D,
-% 7. Design 2 w/ Linear RFFE
-% 8. Design 2 w/o A/D w/ Linear RFFE
-designID = [1;1;1;1;2;2;2;2];
-ndsgn = length(unique(designID));
-for idsgn = 1:ndsgn
-    fname = sprintf('../../datasets/rx_%d',idsgn);
-    
-    mkdir(fname);   % create a new folder
-end
-adcTest = [4;0;4;0;5;0;5;0];
-lnaTest = [4;4;4;4;3;3;3;3];
-mixerTest = [5;5;5;5;5;5;5;5];
-ploTest = [2;2;2;2;7;7;7;7];
-linTest = [false; false; true; true; false; false; true; true];
-nsim = length(adcTest);
+% Calculate the noise floor of the receiver
+NF = rx.nf();
+T = 290;                            % Ambient temperature in K
+k = physconst('Boltzman');          % Boltzmann constant in J/K
+noiseFloor = 10*log10(k*T*fs)+NF;   % Noise floor in dB
+disp(['Receiver noise floor: ' num2str(noiseFloor+30,'%2.1f') ' dBm'])
 
-% Intialize vectors
-snrOut = zeros(nsnr, nsim, nit);
-tx = cell(nit,1);
-ch = cell(nit,1);
-rx = cell(nsim, nit);
+snrInTest = 0:5:90;
+nsnr = length(snrInTest);
 
-for it = 1:nit
-    % Create the transmitter object
-    tx{it} = Tx('nx', nx, 'txSymType', txSymType);
-    
-    % Create the channel object
-    ch{it} = Chan('nx', nx, 'nrx', nrx, 'chanType', chanType, 'noiseTemp', noiseTemp);
-    
-    for isim = 1:nsim
-        rx{isim,it} = Rx(...
-            'nrx', nrx, ...
-            'nx', nx, ...
-            'lnaNF', lnaNF(lnaTest(isim)), ...
-            'lnaGain', lnaGain(lnaTest(isim)), ...
-            'lnaPower', lnaPower(lnaTest(isim)), ...
-            'lnaAmpLut', lnaAmpLut(:,:,lnaTest(isim)), ...
-            'mixNF', mixNF(ploTest(isim)), ...
-            'mixPLO', mixPLO(ploTest(isim)), ...
-            'mixGain', mixGain(mixerTest(isim)), ...
-            'mixPower', mixPower(mixerTest(isim)), ...
-            'mixAmpLut', reshape(mixAmpLut(:,:,ploTest(isim),mixerTest(isim)),31,3), ...
-            'fs', fs, ...
-            'isLinear', linTest(isim), ...
-            'nbits', adcTest(isim), ...
-            'snrInTest', snrInTest, ...
-            'designID', designID(isim));
+rx.set('snrInTest', snrInTest);
+
+% Create the transmitter object
+tx = Tx('nx', nx, 'txSymType', txSymType, 'xvar', xvar);
+
+% Create the channel object
+ch = Chan('nx', nx, 'nrx', nrx, 'fs', fs, 'chanType', chanType, 'noiseTemp', T);
+
+%% Generate the dataset
+if isSave
+    fname = sprintf('../../datasets/rx_%d', irx);
+    if isfolder(fname)
+        rmdir(fname)
     end
+    mkdir(fname)
 end
-
-
+%%
+snrOut = zeros(nsnr, nit);
 for it = 1:nit
     tic;
-    % Generate new data
-    x = tx{it}.step();
-    
-    % Send the data over the channel
-    [y, w] = ch{it}.step(x);
-    
-    % Receive data
-    parfor isim = 1:nsim
-        snrOut(:,isim,it) = rx{isim,it}.step(x, y, w);
-        
-        % Save output data
+    x = tx.step();
+    [y, w] = ch.step(x);
+    snrOut(:,it) = rx.step(x, y, w);
+    if isSave
         T = table;
-        T.yrffe = rx{isim,it}.yrffe;
-        T.xhat = rx{isim,it}.xhat;
-        
-        writetable(T, sprintf('../../datasets/rx_%d/odata_%d_%d.csv', ...
-            rx{isim,it}.designID, isim, it));
-    end    
-    
-    % Save common data
-    T = table;
-    T.x = x;
-    T.y = y;
-    T.w = w;
-    tmp = rx{1,it}.step(x, y, w);
-    T.yant = rx{1,it}.yant;
-    
-    for idsgn = 1:ndsgn
-        writetable(T, sprintf('../../datasets/rx_%d/idata_%d.csv', ...
-            designID(idsgn), it));
+        T.x = x;
+        T.y = y;
+        T.w = w;
+        T.yant = rx.yant;
+        T.yrffe = rx.yrffe;
+        T.pwrIn = rx.pwrIn;
+        T.pwrOut = rx.pwrOut;
+        writetable(T, sprintf('../../datasets/rx_%d/dataset_%d.csv', irx, it));
     end
     toc;
 end
+snrOut = mean(snrOut, 2);
 
-% Average over all iterations.
-snrOut = mean(snrOut, 3);
-
-% Calculate the saturation SNR
-snrSat = snrOut(end, :)';
-
-%% Find the Effective Noise Figure and Power Consumption
-
-rffePower = zeros(nsim, ndrivers);
-rffeNF = zeros(nsim, 1);
-
-for isim = 1:nsim
-    rffePower(isim, :) = rx{isim}.power();	% RFFE power consumption [mW]
-    rffeNF(isim) = rx{isim}.nf();			% Effective noise figure [dBm]
-end
-
-% Find the minimum power for each parameter setting. The `idriver` will
-% denote the number of LO drivers.
-[rffePower, idriver] = min(rffePower, [], 2);
-
-%% Fit a model
-% We use two parameters to characterize the performance of each
-% configuration: (a) effective noise figure that is dominant in low input
-% power; (b) saturation SNR that is dominant in high SNR. Using these
-% values we can fit a model for the output SNR as follows,
-
-% For non-linear systems we empirically show that the output SNR can be
-% calculated by the following formula
-nom = nrx * 10.^(0.1*snrInTest);
-denom = reshape(10.^(0.1*rffeNF), [], nsim) + ...
-    nrx * reshape(10.^(0.1*snrInTest), nsnr, []) .* ...
-    reshape(10.^(-0.1*snrSat), [], nsim);
-rffeModel = 10*log10(nom./denom);
-
-%% Save the paramters for each receiver design
-
-it = 1;
-tic;
-for isim = 1:nsim
-    T = table;
-    T.fc = fc;
-    T.fs = fs;
-    T.nx = nx;
-    T.nit = nit;
-    T.nrx = nrx;
-    T.nsnr = nsnr;
-    T.xvar = xvar;
-    T.idriver = idriver(isim);
-    T.nbits = adcTest(isim);
-    T.isLinear = linTest(isim);
-    T.txSymType = tx{it}.txSymType;
-    T.chanType = ch{it}.chanType;
-    T.rffePower = rffePower(isim);
-    T.snrSat = snrSat(isim);
+%% Plot the Output SNR and the RFFE Output Power
+rxPwr = reshape(mean(mean(rx.pwrIn, 1), 2), [], 1);
+outPwr = reshape(mean(mean(rx.pwrOut, 1), 2), [], 1);
     
-    writetable(T, sprintf('../../datasets/rx_%d/param_0_%d_%d.csv', ...
-        rx{isim,it}.designID, isim, it));
-    
-    T = table;
-    T.snrOut = snrOut(:,isim);
-    T.rffeModel = rffeModel(:,isim);
-    T.Pin = Pin;
-    
-    writetable(T, sprintf('../../datasets/rx_%d/param_1_%d_%d.csv', ...
-        rx{isim,it}.designID, isim, it));
-end
-toc;
+figure(1);
+clf;
+yyaxis left
+plot(rxPwr, snrOut, '-o', 'linewidth', 1.5, 'markersize', 5);
+box on;
+axis tight;
+xlabel('Receive power per antenna [dBm]', 'interpreter', 'latex', ...
+	'fontsize', 13);
+ylabel('Output SNR $\;(\gamma_\mathrm{out})\;$ [dB]', ...
+	'interpreter', 'latex', ...
+	'fontsize', 13);
+grid minor;
+ylim([0,33]);
+
+yyaxis right
+plot(rxPwr, outPwr, '-^', 'linewidth', 1.5,'markersize', 5);
+box on;
+ylabel('Output RFFE power [dBm]', ...
+	'interpreter', 'latex', ...
+	'fontsize', 13);
+ylim([-75,-10]); 

@@ -8,6 +8,7 @@ classdef Chan < matlab.System
                         %               'iidAoA' or 'ones'
         noiseTemp;      % noise temperature in K
         EkT;            % thermal noise energy
+        fs;
     end
     
     methods
@@ -44,8 +45,8 @@ classdef Chan < matlab.System
             % Generate RX symbols with no noise
             y = x.*w;
             
-            % Rescale so that it is Es/kT = 1
-            scale = sqrt(obj.EkT/mean(abs(y).^2, 'all'));
+            % Rescale so that it is Es/(fs*kT) = 1
+            scale = sqrt((obj.fs*obj.EkT)/mean(abs(y).^2, 'all'));
             y = y * scale;
         end
     end

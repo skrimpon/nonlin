@@ -29,6 +29,9 @@ classdef Rx < matlab.System
         yant;
         yrffe;
         xhat;
+        
+        pwrIn;
+        pwrOut;
     end
     
     properties (Dependent)
@@ -92,14 +95,15 @@ classdef Rx < matlab.System
             
             obj.yant = zeros(obj.nx, obj.nrx, nsnr);
             obj.yrffe = zeros(obj.nx, obj.nrx, nsnr);
+            xrffe = zeros(obj.nx, obj.nrx, nsnr);
+            
             obj.xhat = zeros(obj.nx, nsnr);
-            y = y - mean(y);
             for isnr = 1:nsnr
                 % Get the SNR and scale the input signal
                 obj.yant(:,:,isnr) = 10^(0.05*obj.snrInTest(isnr))*y;
                 
                 % Run through RFFE stages
-                obj.yrffe(:,:,isnr) = obj.rffe.step(obj.yant(:,:,isnr));
+                [obj.yrffe(:,:,isnr), xrffe(:,:,isnr)] = obj.rffe.step(obj.yant(:,:,isnr));
                 
                 % Add thermal noise
                 obj.yant(:,:,isnr) = obj.rffe.elem{1}.step(obj.yant(:,:,isnr));
@@ -116,6 +120,8 @@ classdef Rx < matlab.System
                 % Measure the output SNR
                 snrOut(isnr) = 10*log10(abs(a).^2*obj.xvar/dvar);
             end
+            obj.pwrIn = 10*log10(obj.yant .* conj(obj.yant)) + 30;
+            obj.pwrOut = 10*log10(xrffe .* conj(xrffe)) + 30;
         end
     end
 end
