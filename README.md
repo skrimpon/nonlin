@@ -37,4 +37,8 @@ We provide the trained networks and the testing dataset in a colab notebook. We,
 
 If you just want to read our results please see the notebook written as a markdown [here](https://github.com/skrimpon/nonlin/blob/main/demo/FinalResults.md). 
 
+## Our main result
 
+>![Results](https://raw.githubusercontent.com/skrimpon/nonlin/main/performance_eval.png)
+>
+> The performance of our DNN compared with the state of the art baseline. We observe a performance improvement up to 20 dB compared to the baseline. More importantly, our model significantly improves the performance specifically in the non-linear region.
